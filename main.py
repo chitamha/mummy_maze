@@ -17,7 +17,7 @@ class GameState:
         self.screen_size_x = 494
         self.screen_size_y = 480
         self.coordinate_screen_x = 67
-        self.coordinate_screen_y = 81
+        self.coordinate_screen_y = 8000
         self.get_input_maze(file_name)
         self.get_input_object(file_name)
 
