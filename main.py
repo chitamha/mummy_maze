@@ -33,8 +33,8 @@ class GameState:
             self.mummy_white_direction = "DOWN"
 
     def get_input_maze(self, file_name):
+        # Lấy dữ liệu mê cung ASCII lưu vào maze
         self.maze = []
-        self.stair_position = ()
         with open(os.path.join(maze_path, file_name)) as file:
             for line in file:
                 row = []
@@ -42,15 +42,19 @@ class GameState:
                     if chr != '\n': row.append(chr)
                 self.maze.append(row)
 
+        # Mê cung ASCII vừa biểu diễn đường đi vừa biểu diễn tường nên size nó gấp đôi
         self.maze_size = len(self.maze) // 2
         self.cell_rect = self.maze_rect // self.maze_size
 
+        # Tìm vị trí Stair trong mê cung
+        self.stair_position = ()
         for i in range(len(self.maze)):
             for j in range(len(self.maze[i])):
                 if self.maze[i][j] == 'S':
                     self.stair_position = (i, j)
 
     def get_input_object(self, file_name):
+        # Tìm position ban đầu của người chơi và mummy
         with open(os.path.join(agents_path, file_name)) as file:
             for line in file:
                 x = line.split()
@@ -107,7 +111,12 @@ def rungame(level):
     explorer_sheet = graphics.character_spritesheet(explorer_path)
     mummy_white_sheet = graphics.character_spritesheet(mummy_white_path)
 
-    # Object
+    # Objects
+    # Mỗi object sẽ là một dict tương tự như struct bên C++ chứa 4 thứ
+    # 1. sprite_sheet: Một hình ảnh chứa các ô frame trạng thái của object
+    # 2. coordinates: Tọa độ hiện tại của object
+    # 3. direction: Hướng quay của object (UP, DOWN, RIGHT, LEFT)
+    # 4. cellIndex: Vị trí ô frame cần vẽ trong sprite_sheet
     explorer = {
         "sprite_sheet": explorer_sheet,
         "coordinates": Cal_coordinates(game, game.explorer_position[0], game.explorer_position[1]),
@@ -121,17 +130,20 @@ def rungame(level):
         "cellIndex": 0
     }
 
-    # Set base
+    # Thiết lập các chỉ số cơ bản
     pygame.init()
     pygame.display.set_caption("Mummy Maze")
     FPS = 60
     clock = pygame.time.Clock()
     window = pygame.display.set_mode((game.screen_size_x, game.screen_size_y))
-    graphics.draw_screen(window, game.maze, backdrop, floor, game.maze_size, game.cell_rect, stair,
-                         game.stair_position,
+
+    # Vẽ màn hình hiển thị ban đầu
+    graphics.draw_screen(window, game.maze, backdrop, floor, game.maze_size, game.cell_rect,
+                         stair, game.stair_position,
                          mummy_white,
                          wall,
                          explorer)
+    # Ở trên nó chỉ đẩy lên ô nhớ update để vẽ ra
     pygame.display.update()
 
     running = True
@@ -141,7 +153,7 @@ def rungame(level):
                 running = False
 
 # Điều kiện này làm cho các câu lệnh bên dưới chỉ chạy từ file gốc này
-# Khi import file main cho các file khác if sẽ sai
+# Khi import file main cho các file khác if sẽ sai -> Không chạy game
 if __name__ == "__main__":
     # Tạo đường dẫn đến thư mục gốc
     project_path = os.getcwd()
