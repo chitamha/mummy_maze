@@ -18,13 +18,12 @@ class character_spritesheet:
 
         # Lần lượt thêm các frame vào list theo thứ tự sau:
         # 0 1 2 3 4
-        # 5 6 7 8 9
-        # ...
-        # 15 16 17 18 19
+        # 5 .......
+        # ......18 19
         self.cells = list()
         for y in range(self.rows):
             for x in range(self.cols):
-                self.cells.append([x * w, y * h, w, h]) # [vị trí x, vị trí y, width, height]
+                self.cells.append([x * w, y * h, w, h])
 
     def draw(self, surface, x, y, cellIndex, direction):
         """
@@ -190,12 +189,11 @@ def draw_screen(screen, input_maze, backdrop, floor, maze_size, cell_rect,
         # Vertical Wall (Tường dọc)
         # Cột chẵn chứa tường dọc
         # Tường nằm giữa 2 ô trống dọc nên ở hàng lẻ
-
-        for j in range(2, len(input_maze)-1, 2):
-            for i in range(1, len(input_maze[j]), 2):
-                if input_maze[i][j] == "%":
-                    wall_x = coordinate_X + cell_rect * (j // 2)
-                    wall_y = coordinate_Y + cell_rect * (i // 2)
+        for y in range(2, len(input_maze)-1, 2):
+            for x in range(1, len(input_maze[y]), 2):
+                if input_maze[x][y] == "%":
+                    wall_x = coordinate_X + cell_rect * (y // 2)
+                    wall_y = coordinate_Y + cell_rect * (x // 2)
                     if maze_size == 6 or maze_size == 8:
                         wall_x -= 6
                         wall_y -= 12
@@ -204,11 +202,11 @@ def draw_screen(screen, input_maze, backdrop, floor, maze_size, cell_rect,
                         wall_y -= 9
                     # Trường hợp mà tường tạo góc vuông thì sài right_wall bởi nó ngắn nó mới khớp
                     # Đây chính là trường hợp tường hình chữ L
-                    if (input_maze[i+1][j+1] == "%"):
+                    if (input_maze[x+1][y+1] == "%"):
                         wall.draw_right_wall(screen, wall_x, wall_y)
                         # redraw ở đây là vẽ lại phần ngang của chữ L cho nó không thừa
-                        redraw_x = coordinate_X + cell_rect * ((j+1) // 2)
-                        redraw_y = coordinate_Y + cell_rect * ((i+1) // 2)
+                        redraw_x = coordinate_X + cell_rect * ((y+1) // 2)
+                        redraw_y = coordinate_Y + cell_rect * ((x+1) // 2)
                         if maze_size == 6 or maze_size == 8:
                             redraw_x -= 6
                             redraw_y -= 12
@@ -216,7 +214,7 @@ def draw_screen(screen, input_maze, backdrop, floor, maze_size, cell_rect,
                             redraw_x -= 3
                             redraw_y -= 9
                         # Vẽ lại tường ngang không bóng đổ
-                        if (i + 1 < maze_size * 2 and j + 1 < maze_size * 2):
+                        if (x + 1 < maze_size * 2 and y + 1 < maze_size * 2):
                             wall.draw_up_wall_no_shadow(screen, redraw_x, redraw_y)
                     else:
                         wall.draw_left_wall(screen, wall_x, wall_y)
