@@ -268,6 +268,8 @@ def rungame(level):
                     explorer_character.move(explorer_new_x, explorer_new_y, window, game,
                                             backdrop, floor, stair, game.stair_position, wall,
                                             explorer, mummy_white)
+                    game.explorer_position = [explorer_new_x, explorer_new_y]
+
 
                 # Update cho những con mummy di chuyển
                 # Đồng thời hàm update_enemy_position cũng cho biết mummy có ăn thịt explorer chưa để cập nhật running
@@ -277,43 +279,44 @@ def rungame(level):
                                               mummy_white_character, mummy_white)
             # Xử lí click chuột
             elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1):
-                    # Lấy tọa độ x, y
-                    mouse_x, mouse_y = event.pos
+                # Lấy tọa độ x, y
+                mouse_x, mouse_y = event.pos
+                                    
+                # 1. Đổi từ pixel sang ô (target_row, target_col) trong matrix
+                target_row = (mouse_y - game.coordinate_screen_y) // game.cell_rect
+                target_col = (mouse_x - game.coordinate_screen_x) // game.cell_rect
 
-                    # 1. Đổi từ pixel sang ô (target_row, target_col) trong matrix
-                    target_row = (mouse_y - game.coordinate_screen_y) // game.cell_rect
-                    target_col = (mouse_x - game.coordinate_screen_x) // game.cell_rect
+                # 2. Đổi từ matrix (row, col) sang chỉ số trong maze (dạng ASCII): 2*row+1, 2*col+1)
+                explorer_new_x = int(target_row * 2 + 1)
+                explorer_new_y = int(target_col * 2 + 1)
 
-                    # 2. Đổi từ matrix (row, col) sang chỉ số trong maze (dạng ASCII): 2*row+1, 2*col+1)
-                    explorer_new_x = int(target_row * 2 + 1)
-                    explorer_new_y = int(target_col * 2 + 1)
-
-                    # 4. Xác định hướng di chuyển
-                    # Chỉ di chuyển đến ô kề cạnh (matrix)
-                    if (explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y, explorer_new_x, explorer_new_y) and
-                                                                ((abs(explorer_x - explorer_new_x) == 2 and (explorer_y == explorer_new_y)) or
-                                                                ((explorer_x == explorer_new_x) and abs(explorer_y - explorer_new_y) == 2))):
-                        if (explorer_new_x == explorer_x - 2):
-                            explorer["direction"] = "UP"
-                        elif (explorer_new_x == explorer_x + 2):
-                            explorer["direction"] = "DOWN"
-                        elif (explorer_new_y == explorer_y - 2):
-                            explorer["direction"] = "LEFT"
-                        elif (explorer_new_y == explorer_y  + 2):
-                            explorer["direction"] = "RIGHT"
-                    
+                # 4. Xác định hướng di chuyển
+                # Chỉ di chuyển đến ô kề cạnh (matrix)
+                if (explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y, explorer_new_x, explorer_new_y) and
+                                                            ((abs(explorer_x - explorer_new_x) == 2 and (explorer_y == explorer_new_y)) or
+                                                            ((explorer_x == explorer_new_x) and abs(explorer_y - explorer_new_y) == 2))):
+                    if (explorer_new_x == explorer_x - 2):
+                        explorer["direction"] = "UP"
+                    elif (explorer_new_x == explorer_x + 2):
+                        explorer["direction"] = "DOWN"
+                    elif (explorer_new_y == explorer_y - 2):
+                        explorer["direction"] = "LEFT"
+                    elif (explorer_new_y == explorer_y  + 2):
+                        explorer["direction"] = "RIGHT"
+                
                     # Nếu có tọa độ thay đổi thì gọi hàm move để vẽ nhân vật di chuyển
                     if explorer_x != explorer_new_x or explorer_y != explorer_new_y:
                         explorer_character.move(explorer_new_x, explorer_new_y, window, game,
                                                 backdrop, floor, stair, game.stair_position, wall,
                                                 explorer, mummy_white)
+                        game.explorer_position = [explorer_new_x, explorer_new_y]
 
-                    # Update cho những con mummy di chuyển
-                    # Đồng thời hàm update_enemy_position cũng cho biết mummy có ăn thịt explorer chưa để cập nhật running
-                    running = update_enemy_position(window, game,
-                                                backdrop, floor, stair, wall,
-                                                explorer, explorer_character,
-                                                mummy_white_character, mummy_white)
+                # Update cho những con mummy di chuyển
+                # Đồng thời hàm update_enemy_position cũng cho biết mummy có ăn thịt explorer chưa để cập nhật running
+                running = update_enemy_position(window, game,
+                                            backdrop, floor, stair, wall,
+                                            explorer, explorer_character,
+                                            mummy_white_character, mummy_white)
                 
 # Hàm di chuyển bằng chuột
 def handle_mouse_click(pos, game, explorer, mummy_white, window, backdrop, floor, stair, wall):
