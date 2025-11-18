@@ -318,22 +318,6 @@ def rungame(level):
                                             explorer, explorer_character,
                                             mummy_white_character, mummy_white)
                 
-# Hàm di chuyển bằng chuột
-def handle_mouse_click(pos, game, explorer, mummy_white, window, backdrop, floor, stair, wall):
-    """
-    Xử lí di chuyển của Explorer bằng cách click chuột trái:
-    - Click vào một ô kề (trên, phải, dưới, trái) của Explorer
-    - Cập nhật hướng, vị trí, tọa độ pixel của Explorer
-    - Vẽ lại màn hình
-    """
-        
-    # Tạo biến explorer_charater là một class Explorer bên file characters.py
-    # mummy_white_character tương tự
-    explorer_character = characters.Explorer(game.explorer_position[0], game.explorer_position[1])
-    mummy_white_character = characters.mummy_white(game.mummy_white_position[0], game.mummy_white_position[1])
-    
-    
-
 # Điều kiện này làm cho các câu lệnh bên dưới chỉ chạy từ file gốc này
 # Khi import file main cho các file khác if sẽ sai -> Không chạy game
 if __name__ == "__main__":
