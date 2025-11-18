@@ -1,6 +1,7 @@
 ## 10/11/2025
 
 Mấy ông đọc từ file main dòng if __name__ == "__main__" rồi đọc theo hướng code để hiểu hết nha
+
 Một số thay đổi so với code tham khảo:
 - Trong hàm main:
   + Anh sử dụng biến layout để lấy dữ liệu file txt
@@ -11,4 +12,4 @@ Một số thay đổi so với code tham khảo:
   + Ở phần Vẽ Stair tui có chỉnh lại điều kiện cho nó đơn giản và sắp xếp lại thứ tự dễ nhìn (Phần này mấy ông check lại cùng với tui)
 
 ## 19/11/2025
-- Hàm di chuyển bằng click chuột còn bị lỗi một chút (update: đã sửa)
+- Hàm di chuyển bằng click chuột còn bị lỗi một chút (Update: Đã sửa)
