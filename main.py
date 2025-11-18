@@ -2,6 +2,7 @@ import pygame
 import os
 
 import graphics
+import characters
 
 # Trạng thái game
 class GameState:
@@ -96,6 +97,77 @@ def load_image_path(size):
 
     return backdrop_path, floor_path, wall_path, stair_path, explorer_path, mummy_white_path
 
+def check_explorer_is_killed(explorer_character, mummy_white_character):
+    if mummy_white_character:
+        if explorer_character.get_x() == mummy_white_character.get_x() and explorer_character.get_y() == mummy_white_character.get_y():
+            return True
+    return False
+
+def update_enemy_position(window, game,
+                          backdrop, floor, stair, wall,
+                          explorer, explorer_character,
+                          mummy_white_character, mummy_white):
+    # Gọi hàm kiểm tra xem mummy có trùng vị trí với người chơi không
+    if check_explorer_is_killed(explorer_character, mummy_white_character):
+        return False
+    # -------------------------------MUMMY WHITE FIRST MOVE-------------------------------
+    mw_move = True
+    if mw_move:
+        # Vị trí cũ của mummy
+        mw_past_position = [mummy_white_character.get_x(), mummy_white_character.get_y()]
+        # Cho mummy di chuyển
+        mummy_white_character = mummy_white_character.white_move(game.maze, explorer_character)
+        # Cập nhật lại vị trí mummy
+        mw_new_position = [mummy_white_character.get_x(), mummy_white_character.get_y()]
+
+    # Vẽ quái vật
+    draw = True
+    if draw:
+        graphics.enemy_move_animation(mw_past_position, mw_new_position,
+                                      window, game,
+                                      backdrop, floor, stair, game.stair_position, wall,
+                                      explorer, mummy_white)
+
+    # Check lại sau bước 1 đã thua chưa
+    if check_explorer_is_killed(explorer_character, mummy_white_character):
+        return False
+
+    # -------------------------------MUMMY WHITE SECOND MOVE-------------------------------
+    mw_move = True
+    if mw_move:
+        # Vị trí cũ của mummy
+        mw_past_position = [mummy_white_character.get_x(), mummy_white_character.get_y()]
+        # Cho mummy di chuyển
+        mummy_white_character = mummy_white_character.white_move(game.maze, explorer_character)
+        # Cập nhật lại vị trí mummy
+        mw_new_position = [mummy_white_character.get_x(), mummy_white_character.get_y()]
+
+    # Vẽ quái vật
+    draw = True
+    if draw:
+        graphics.enemy_move_animation(mw_past_position, mw_new_position,
+                                      window, game,
+                                      backdrop, floor, stair, game.stair_position, wall,
+                                      explorer, mummy_white)
+
+    # Check lại sau bước 1 đã thua chưa
+    if check_explorer_is_killed(explorer_character, mummy_white_character):
+        return False
+
+    # Check điều kiện thắng
+    # Theo thứ tự 4 dòng bên dưới:
+    # 1. Cửa ra nằm bên trên
+    # 2. Cửa ra nằm bên dưới
+    # 3. Cửa ra nằm bên trái
+    # 4. Cửa ra nằm bn phải
+    if game.maze[explorer_character.get_x() - 1][explorer_character.get_y()] == "S" or \
+            game.maze[explorer_character.get_x() + 1][explorer_character.get_y()] == "S" or \
+            game.maze[explorer_character.get_x()][explorer_character.get_y() - 1] == "S" or \
+            game.maze[explorer_character.get_x()][explorer_character.get_y() + 1] == "S":
+        print("YOU WIN!")
+        return False
+    return True
+
 def rungame(level):
     # Lấy trạng thái game
     game = GameState(level)
@@ -104,12 +176,14 @@ def rungame(level):
     backdrop_path, floor_path, wall_path, stair_path, explorer_path, mummy_white_path  = load_image_path(game.maze_size)
 
     # Load image
-    backdrop = pygame.image.load(backdrop_path)
-    floor = pygame.image.load(floor_path)
-    stair = graphics.stairs_spritesheet(stair_path)
-    wall = graphics.wall_spritesheet(wall_path, game.maze_size)
-    explorer_sheet = graphics.character_spritesheet(explorer_path)
-    mummy_white_sheet = graphics.character_spritesheet(mummy_white_path)
+    Load_image = True
+    if Load_image:
+        backdrop = pygame.image.load(backdrop_path)
+        floor = pygame.image.load(floor_path)
+        stair = graphics.stairs_spritesheet(stair_path)
+        wall = graphics.wall_spritesheet(wall_path, game.maze_size)
+        explorer_sheet = graphics.character_spritesheet(explorer_path)
+        mummy_white_sheet = graphics.character_spritesheet(mummy_white_path)
 
     # Objects
     # Mỗi object sẽ là một dict tương tự như struct bên C++ chứa 4 thứ
@@ -117,40 +191,92 @@ def rungame(level):
     # 2. coordinates: Tọa độ hiện tại của object
     # 3. direction: Hướng quay của object (UP, DOWN, RIGHT, LEFT)
     # 4. cellIndex: Vị trí ô frame cần vẽ trong sprite_sheet
-    explorer = {
-        "sprite_sheet": explorer_sheet,
-        "coordinates": Cal_coordinates(game, game.explorer_position[0], game.explorer_position[1]),
-        "direction": game.explorer_direction,
-        "cellIndex": 0
-    }
-    mummy_white = {
-        "sprite_sheet": mummy_white_sheet,
-        "coordinates": Cal_coordinates(game, game.mummy_white_position[0], game.mummy_white_position[1]),
-        "direction": game.mummy_white_direction,
-        "cellIndex": 0
-    }
+    initialize_objects = True
+    if initialize_objects:
+        explorer = {
+            "sprite_sheet": explorer_sheet,
+            "coordinates": Cal_coordinates(game, game.explorer_position[0], game.explorer_position[1]),
+            "direction": game.explorer_direction,
+            "cellIndex": 0
+        }
+        mummy_white = {
+            "sprite_sheet": mummy_white_sheet,
+            "coordinates": Cal_coordinates(game, game.mummy_white_position[0], game.mummy_white_position[1]),
+            "direction": game.mummy_white_direction,
+            "cellIndex": 0
+        }
 
     # Thiết lập các chỉ số cơ bản
-    pygame.init()
-    pygame.display.set_caption("Mummy Maze")
-    FPS = 60
-    clock = pygame.time.Clock()
-    window = pygame.display.set_mode((game.screen_size_x, game.screen_size_y))
+    set_base = True
+    if set_base:
+        pygame.init()
+        pygame.display.set_caption("Mummy Maze")
+        FPS = 60
+        clock = pygame.time.Clock()
+        window = pygame.display.set_mode((game.screen_size_x, game.screen_size_y))
 
-    # Vẽ màn hình hiển thị ban đầu
-    graphics.draw_screen(window, game.maze, backdrop, floor, game.maze_size, game.cell_rect,
-                         stair, game.stair_position,
-                         mummy_white,
-                         wall,
-                         explorer)
-    # Ở trên nó chỉ đẩy lên ô nhớ update để vẽ ra
-    pygame.display.update()
+        # Vẽ màn hình hiển thị ban đầu
+        graphics.draw_screen(window, game.maze, backdrop, floor, game.maze_size, game.cell_rect,
+                             stair, game.stair_position, wall,
+                             explorer, mummy_white)
+        # Ở trên nó chỉ đẩy lên ô nhớ update để vẽ ra
+        pygame.display.update()
+
+    # Tạo biến explorer_charater là một class Explorer bên file characters.py
+    # mummy_white_character tương tự
+    explorer_character = characters.Explorer(game.explorer_position[0], game.explorer_position[1])
+    mummy_white_character = characters.mummy_white(game.mummy_white_position[0], game.mummy_white_position[1])
 
     running = True
     while running:
+        # Lấy tọa độ hiện tại của explorer và tạo 2 biến tọa độ mới để di chuyển
+        explorer_x = explorer_character.get_x()
+        explorer_y = explorer_character.get_y()
+        explorer_new_x = explorer_x
+        explorer_new_y = explorer_y
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.KEYDOWN:
+                # Mỗi hướng đi gọi hàm eligible_character_move để kiểm tra xem đủ đk di chuyển không để cập nhật
+                if event.key == pygame.K_UP:
+                    if explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y,
+                                                                  explorer_x - 2, explorer_y):
+                        explorer_new_x -= 2
+                        explorer["direction"] = "UP"
+                if event.key == pygame.K_DOWN:
+                    if explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y,
+                                                                  explorer_x + 2, explorer_y):
+                        explorer_new_x += 2
+                        explorer["direction"] = "DOWN"
+                if event.key == pygame.K_LEFT:
+                    if explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y,
+                                                                  explorer_x, explorer_y - 2):
+                        explorer_new_y -= 2
+                        explorer["direction"] = "LEFT"
+                if event.key == pygame.K_RIGHT:
+                    if explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y,
+                                                                  explorer_x, explorer_y + 2):
+                        explorer_new_y += 2
+                        explorer["direction"] = "RIGHT"
+                if event.key == pygame.K_SPACE:
+                    pass
+
+                # Nếu có tọa độ thay đổi thì gọi hàm move để vẽ nhân vật di chuyển
+                if explorer_x != explorer_new_x or explorer_y != explorer_new_y:
+                    explorer_character.move(explorer_new_x, explorer_new_y, window, game,
+                                            backdrop, floor, stair, game.stair_position, wall,
+                                            explorer, mummy_white)
+
+                # Update cho những con mummy di chuyển
+                # Đồng thời hàm update_enemy_position cũng cho biết mummy có ăn thịt explorer chưa để cập nhật running
+                running = update_enemy_position(window, game,
+                                              backdrop, floor, stair, wall,
+                                              explorer, explorer_character,
+                                              mummy_white_character, mummy_white)
+
+
 
 # Điều kiện này làm cho các câu lệnh bên dưới chỉ chạy từ file gốc này
 # Khi import file main cho các file khác if sẽ sai -> Không chạy game
