@@ -11,4 +11,4 @@ Một số thay đổi so với code tham khảo:
   + Ở phần Vẽ Stair tui có chỉnh lại điều kiện cho nó đơn giản và sắp xếp lại thứ tự dễ nhìn (Phần này mấy ông check lại cùng với tui)
 
 ## 19/11/2025
-- Hàm di chuyển bằng click chuột còn bị lỗi một chút
+- Hàm di chuyển bằng click chuột còn bị lỗi một chút (update: đã sửa)
