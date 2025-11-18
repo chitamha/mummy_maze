@@ -7,3 +7,6 @@ Một số thay đổi so với code tham khảo:
   --> Tui sửa thành các biến đơn quản lý 1 Mummy. Khi tới phần nâng cao mình sẽ sửa lại
 - Hàm graphics
   + Ở phần Vẽ Stair tui có chỉnh lại điều kiện cho nó đơn giản và sắp xếp lại thứ tự dễ nhìn (Phần này mấy ông check lại cùng với tui)
+
+Process_2-19/11/2025
+- Hàm di chuyển bằng click chuột còn bị lỗi một chút
