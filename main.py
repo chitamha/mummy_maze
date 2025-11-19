@@ -228,95 +228,132 @@ def rungame(level):
     mummy_white_character = characters.mummy_white(game.mummy_white_position[0], game.mummy_white_position[1])
 
     running = True
-    while running:
-        # Lấy địa chỉ ô (explorer_x, explorer_y) trong maze (ASCII)
-        explorer_x = explorer_character.get_x()
-        explorer_y = explorer_character.get_y()
-        explorer_new_x = explorer_x
-        explorer_new_y = explorer_y
+    # HÀNG ĐỢI LỆNH DI CHUYỂN
+    move_queue = []          # mỗi phần tử: (new_x, new_y, direction)
+    is_moving = False        # đang chạy animation Explorer + Mummy
+    last_input_time = 0      # thời gian lần nhận input gần nhất (ms)
+    INPUT_DELAY = 150        # không nhận input quá dày (< 150ms)
 
+    while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN:
-                # Mỗi hướng đi gọi hàm eligible_character_move để kiểm tra xem đủ đk di chuyển không để cập nhật
+                # Lấy vị trí hiện tại
+                explorer_x = explorer_character.get_x()
+                explorer_y = explorer_character.get_y()
+                explorer_new_x = explorer_x
+                explorer_new_y = explorer_y
+                direction = None
+
                 if event.key == pygame.K_UP:
-                    if explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y,
-                                                                  explorer_x - 2, explorer_y):
-                        explorer_new_x -= 2
-                        explorer["direction"] = "UP"
+                    explorer_new_x -= 2
+                    direction = "UP"
                 if event.key == pygame.K_DOWN:
-                    if explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y,
-                                                                  explorer_x + 2, explorer_y):
-                        explorer_new_x += 2
-                        explorer["direction"] = "DOWN"
+                    explorer_new_x += 2
+                    direction = "DOWN"
                 if event.key == pygame.K_LEFT:
-                    if explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y,
-                                                                  explorer_x, explorer_y - 2):
-                        explorer_new_y -= 2
-                        explorer["direction"] = "LEFT"
+                    explorer_new_y -= 2
+                    direction = "LEFT"
                 if event.key == pygame.K_RIGHT:
-                    if explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y,
-                                                                  explorer_x, explorer_y + 2):
-                        explorer_new_y += 2
-                        explorer["direction"] = "RIGHT"
+                    explorer_new_y += 2
+                    direction = "RIGHT"
                 if event.key == pygame.K_SPACE:
-                    pass
+                    direction = None  # không làm gì
 
-                # Nếu có tọa độ thay đổi thì gọi hàm move để vẽ nhân vật di chuyển
-                if explorer_x != explorer_new_x or explorer_y != explorer_new_y:
-                    explorer_character.move(explorer_new_x, explorer_new_y, window, game,
-                                            backdrop, floor, stair, game.stair_position, wall,
-                                            explorer, mummy_white)
-                    game.explorer_position = [explorer_new_x, explorer_new_y]
-
-
-                # Update cho những con mummy di chuyển
-                # Đồng thời hàm update_enemy_position cũng cho biết mummy có ăn thịt explorer chưa để cập nhật running
-                running = update_enemy_position(window, game,
-                                              backdrop, floor, stair, wall,
-                                              explorer, explorer_character,
-                                              mummy_white_character, mummy_white)
+                # Nếu có hướng và vị trí mới khác vị trí cũ
+                if direction is not None and (explorer_new_x != explorer_x or explorer_new_y != explorer_y):
+                    # Kiểm tra có đi hợp lệ không
+                    if explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y,
+                                                                  explorer_new_x, explorer_new_y):
+                        # CHỈ THÊM VÀO HÀNG ĐỢI
+                        move_queue.append((explorer_new_x, explorer_new_y, direction))
+                
             # Xử lí click chuột
             elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1):
-                # Lấy tọa độ x, y
+                # Chống spam: không nhận click quá nhanh
+                now = pygame.time.get_ticks()
+                if now - last_input_time < INPUT_DELAY:
+                    continue  # bỏ qua click này
+
+                # Lấy tọa độ x, y pixel
                 mouse_x, mouse_y = event.pos
-                                    
+
+                # Lấy vị trí explorer tại thời điểm click
+                explorer_x = explorer_character.get_x()
+                explorer_y = explorer_character.get_y()
+
                 # 1. Đổi từ pixel sang ô (target_row, target_col) trong matrix
                 target_row = (mouse_y - game.coordinate_screen_y) // game.cell_rect
                 target_col = (mouse_x - game.coordinate_screen_x) // game.cell_rect
 
-                # 2. Đổi từ matrix (row, col) sang chỉ số trong maze (dạng ASCII): 2*row+1, 2*col+1)
+                # 2. Đổi từ matrix (row, col) sang chỉ số trong maze (ASCII)
                 explorer_new_x = int(target_row * 2 + 1)
                 explorer_new_y = int(target_col * 2 + 1)
 
-                # 4. Xác định hướng di chuyển
-                # Chỉ di chuyển đến ô kề cạnh (matrix)
-                if (explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y, explorer_new_x, explorer_new_y) and
-                                                            ((abs(explorer_x - explorer_new_x) == 2 and (explorer_y == explorer_new_y)) or
-                                                            ((explorer_x == explorer_new_x) and abs(explorer_y - explorer_new_y) == 2))):
-                    if (explorer_new_x == explorer_x - 2):
-                        explorer["direction"] = "UP"
-                    elif (explorer_new_x == explorer_x + 2):
-                        explorer["direction"] = "DOWN"
-                    elif (explorer_new_y == explorer_y - 2):
-                        explorer["direction"] = "LEFT"
-                    elif (explorer_new_y == explorer_y  + 2):
-                        explorer["direction"] = "RIGHT"
-                
-                    # Nếu có tọa độ thay đổi thì gọi hàm move để vẽ nhân vật di chuyển
-                    if explorer_x != explorer_new_x or explorer_y != explorer_new_y:
-                        explorer_character.move(explorer_new_x, explorer_new_y, window, game,
-                                                backdrop, floor, stair, game.stair_position, wall,
-                                                explorer, mummy_white)
-                        game.explorer_position = [explorer_new_x, explorer_new_y]
+                # 3. Chỉ cho click vào ô kề cạnh
+                is_neighbor = (
+                    (abs(explorer_x - explorer_new_x) == 2 and explorer_y == explorer_new_y) or
+                    (abs(explorer_y - explorer_new_y) == 2 and explorer_x == explorer_new_x)
+                )
 
-                # Update cho những con mummy di chuyển
-                # Đồng thời hàm update_enemy_position cũng cho biết mummy có ăn thịt explorer chưa để cập nhật running
+                if is_neighbor and explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y,
+                                                                              explorer_new_x, explorer_new_y):
+                    # 4. Xác định hướng di chuyển
+                    if explorer_new_x == explorer_x - 2:
+                        direction = "UP"
+                    elif explorer_new_x == explorer_x + 2:
+                        direction = "DOWN"
+                    elif explorer_new_y == explorer_y - 2:
+                        direction = "LEFT"
+                    elif explorer_new_y == explorer_y + 2:
+                        direction = "RIGHT"
+                    else:
+                        direction = None
+
+                    if direction is not None:
+                        # Thêm lệnh vào hàng đợi
+                        move_queue.append((explorer_new_x, explorer_new_y, direction))
+                        last_input_time = now
+        # ================== XỬ LÝ HÀNG ĐỢI LỆNH DI CHUYỂN ==================
+        if (not is_moving) and move_queue:
+            # Lấy lệnh đầu tiên trong queue (FIFO)
+            target_x, target_y, direction = move_queue.pop(0)
+
+            # Lấy lại vị trí hiện tại của Explorer
+            explorer_x = explorer_character.get_x()
+            explorer_y = explorer_character.get_y()
+
+            # Chỉ cho phép di chuyển nếu vẫn kề cạnh + hợp lệ tại thời điểm thực thi
+            is_neighbor = (
+                (abs(explorer_x - target_x) == 2 and explorer_y == target_y) or
+                (abs(explorer_y - target_y) == 2 and explorer_x == target_x)
+            )
+
+            if is_neighbor and explorer_character.eligible_character_move(game.maze, explorer_x, explorer_y,
+                                                                          target_x, target_y):
+                # Set hướng
+                explorer["direction"] = direction
+
+                # Bắt đầu animation → khóa input
+                is_moving = True
+
+                explorer_character.move(target_x, target_y, window, game,
+                                        backdrop, floor, stair, game.stair_position, wall,
+                                        explorer, mummy_white)
+
+                # Sau khi người chơi đi xong thì cho quái di chuyển
                 running = update_enemy_position(window, game,
-                                            backdrop, floor, stair, wall,
-                                            explorer, explorer_character,
-                                            mummy_white_character, mummy_white)
+                                                backdrop, floor, stair, wall,
+                                                explorer, explorer_character,
+                                                mummy_white_character, mummy_white)
+
+                # Kết thúc lượt → mở khóa
+                is_moving = False
+        # Giới hạn FPS để game mượt và ổn định
+        clock.tick(FPS)
+
+
                 
 # Điều kiện này làm cho các câu lệnh bên dưới chỉ chạy từ file gốc này
 # Khi import file main cho các file khác if sẽ sai -> Không chạy game

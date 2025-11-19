@@ -41,6 +41,7 @@ class character():
     def move(self, new_x, new_y, screen, game,
              backdrop, floor, stair, stair_position,wall,
              explorer, mummy_white):
+        
         self.move_animation(new_x, new_y, screen, game,
                             backdrop, floor, stair, stair_position, wall,
                             explorer, mummy_white)
