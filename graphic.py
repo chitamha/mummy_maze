@@ -101,10 +101,8 @@ class stairs_spritesheet:
         surface.blit(self.sheet, (x, y), self.stairs[cellIndex])
 
 def draw_screen(screen, input_maze, backdrop, floor, maze_size, cell_rect,
-                stair, stair_position,
-                mummy_white,
-                wall,
-                explorer):
+                stair, stair_position, wall,
+                explorer, mummy_white):
     # Tọa độ bắt đầu của mê cung đồng bộ với trong file main
     coordinate_X    = 67
     coordinate_Y    = 80
@@ -218,3 +216,54 @@ def draw_screen(screen, input_maze, backdrop, floor, maze_size, cell_rect,
                             wall.draw_up_wall_no_shadow(screen, redraw_x, redraw_y)
                     else:
                         wall.draw_left_wall(screen, wall_x, wall_y)
+
+def determine_moving_direction(past_position, new_position):
+    if past_position[0] == new_position[0] + 2:  # Move UP
+        return "UP"
+    if past_position[0] == new_position[0] - 2:  # Move Down
+        return "DOWN"
+    if past_position[1] == new_position[1] + 2:  # Move Left
+        return "LEFT"
+    if past_position[1] == new_position[1] - 2:  # Move Right
+        return "RIGHT"
+
+def enemy_move_animation(mw_past_position, mw_new_position,
+                         screen, game,
+                         backdrop, floor, stair, stair_position, wall,
+                         explorer, mummy_white):
+    mw_check_movement = False
+    # Mummy white
+    mummy_white_start_x = game.coordinate_screen_x + game.cell_rect * (mw_past_position[1] // 2)
+    mummy_white_start_y = game.coordinate_screen_y + game.cell_rect * (mw_past_position[0] // 2)
+
+    if game.maze[mw_new_position[0] - 1][mw_new_position[1]] == "%":
+        mummy_white_start_y += 3
+
+    mummy_white_start_coordinate = [mummy_white_start_x, mummy_white_start_y]
+    if mw_past_position[0] != mw_new_position[0] or mw_past_position[1] != mw_new_position[1]:
+        mw_check_movement = True
+
+    if mw_check_movement:
+        mummy_white["direction"] = determine_moving_direction(mw_past_position, mw_new_position)
+
+    step_stride = game.cell_rect // 5
+    mummy_white["coordinates"] = mummy_white_start_coordinate
+
+    for i in range(6):
+        if i < 5:
+            if mummy_white["direction"] == "UP" and mw_check_movement:
+                mummy_white["coordinates"][1] -= step_stride
+            if mummy_white["direction"] == "DOWN" and mw_check_movement:
+                mummy_white["coordinates"][1] += step_stride
+            if mummy_white["direction"] == "LEFT" and mw_check_movement:
+                mummy_white["coordinates"][0] -= step_stride
+            if mummy_white["direction"] == "RIGHT" and mw_check_movement:
+                mummy_white["coordinates"][0] += step_stride
+        if mw_check_movement:
+            mummy_white["cellIndex"] = i % 5
+
+        draw_screen(screen, game.maze, backdrop, floor, game.maze_size, game.cell_rect,
+                    stair, stair_position, wall,
+                    explorer, mummy_white)
+        pygame.time.delay(100)
+        pygame.display.update()
