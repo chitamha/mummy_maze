@@ -6,7 +6,7 @@ import main
 class character_spritesheet:
     def __init__(self, image_spritesheet_path):
         # Một character sẽ có 20 frame chứa trong 4 hàng 5 cột
-        self.sheet = pygame.image.load(image_spritesheet_path)
+        self.sheet      = pygame.image.load(image_spritesheet_path)
         self.rows       = 4
         self.cols       = 5
         self.totalCell  = self.rows * self.cols
@@ -83,6 +83,40 @@ class wall_spritesheet:
     def draw_up_wall_no_shadow(self, surface, x, y):
         surface.blit(self.sheet, (x, y), self.up_wall_no_shadow)
 
+class key_spritesheet:
+    def __init__(self, image_spritesheet_path):
+        self.sheet  = pygame.image.load(image_spritesheet_path)
+        self.rect   = self.sheet.get_rect()
+        self.cell   = [0, 0, self.rect.width, self.rect.height]
+
+    def draw(self, surface, x, y):
+        surface.blit(self.sheet, (x, y), self.cell)
+
+class gate_spritesheet:
+    def __init__(self, image_spritesheet_path):
+        self.sheet  = pygame.image.load(image_spritesheet_path)
+        self.rect   = self.sheet.get_rect()
+        # Số frame trong sheet gate là 8 trên cùng một hàng
+        number_gate_sheet = 8
+        # Tính toán chiều rộng chiều cao của frame để phục vụ cho việc trích xuất
+        w = self.rect.width / number_gate_sheet
+        h = self.rect.height
+        self.cells  = []
+        for x in range(number_gate_sheet):
+            self.cells.append([x * w, 0, w, h])
+
+    def draw(self, surface, x, y, cellIndex):
+        surface.blit(self.sheet, (x, y), self.cells[cellIndex])
+
+class trap_spritesheet:
+    def __init__(self, image_spritesheet_path):
+        self.sheet  = pygame.image.load(image_spritesheet_path)
+        self.rect   = self.sheet.get_rect()
+        self.cell   = [0, 0, self.rect.width, self.rect.height]
+
+    def draw(self, surface, x, y):
+        surface.blit(self.sheet, (x, y), self.cell)
+
 class stairs_spritesheet:
     def __init__(self, image_spritesheet_path):
         self.sheet  = pygame.image.load(image_spritesheet_path)
@@ -95,26 +129,32 @@ class stairs_spritesheet:
         # Lần lượt thêm các frame vào list theo thứ tự sau: 0 1 2 3
         self.stairs = []
         for x in range(4):
-            self.stairs.append([x * self.cell_w, 0, self.cell_w, self.cell_h])
+            self.stairs.append(
+                [x * self.cell_w, 0, self.cell_w, self.cell_h]
+            )
 
     def draw(self, surface, x, y, cellIndex):
         surface.blit(self.sheet, (x, y), self.stairs[cellIndex])
 
 def draw_screen(screen, input_maze, backdrop, floor, maze_size, cell_rect,
-                stair, stair_position, wall,
-                explorer, mummy_white):
+                stair, stair_position, trap, trap_position, key, key_position,
+                gate_sheet, gate, wall,
+                explorer,
+                mummy_white, mummy_red, scorpion_white, scorpion_red):
     # Tọa độ bắt đầu của mê cung đồng bộ với trong file main
     coordinate_X    = 67
     coordinate_Y    = 80
 
     # Vẽ backdrop và floor đơn giản
-    if True:
+    draw_backdrop_and_floor = True
+    if draw_backdrop_and_floor:
         # Phải vẽ backdrop trước rồi tới floor để floor đè lên phần đen trong backdrop
         screen.blit(backdrop, (0, 0))
         screen.blit(floor, (coordinate_X, coordinate_Y))
 
     # Vẽ Stair
-    if True:
+    draw_stair = True
+    if draw_stair:
         # Tính xem stair nằm trong ô nào trong mê cung
         stair_px = stair_position[1] // 2
         stair_py = stair_position[0] // 2
@@ -148,6 +188,30 @@ def draw_screen(screen, input_maze, backdrop, floor, maze_size, cell_rect,
 
         stair.draw(screen, stair_x, stair_y, stair_index)
 
+    # Vẽ Trap
+    if trap_position:
+        trap_x = coordinate_X + cell_rect * (trap_position[1] // 2)
+        trap_y = coordinate_Y + cell_rect * (trap_position[0] // 2)
+        trap.draw(screen, trap_x, trap_y)
+
+    # Vẽ Key
+    if key_position:
+        key_x = coordinate_X + cell_rect * (key_position[1] // 2)
+        key_y = coordinate_Y + cell_rect * (key_position[0] // 2)
+        key.draw(screen, key_x, key_y)
+
+    # Vẽ gate
+    if gate:
+        gate_x = coordinate_X + cell_rect * (gate["gate_position"][1] // 2)
+        gate_y = coordinate_Y + cell_rect * (gate["gate_position"][0] // 2)
+        if maze_size == 6 or maze_size == 8:
+            gate_x -= 6
+            gate_y -= 12
+        elif maze_size == 10:
+            gate_x -= 3
+            gate_y -= 9
+        gate_sheet.draw(screen, gate_x, gate_y, gate["cellIndex"])
+
     # Vẽ Explorer
     if explorer["coordinates"]:
         # Các tham số truyền vào đọc hàm draw trong character_spritesheet để hiểu
@@ -156,16 +220,45 @@ def draw_screen(screen, input_maze, backdrop, floor, maze_size, cell_rect,
                                               explorer["cellIndex"],
                                               explorer["direction"])
 
-    # Vẽ Mummy
+    # Vẽ Mummy White
     if mummy_white:
-        # Tương tự Explorer
-        mummy_white["sprite_sheet"].draw(screen, mummy_white["coordinates"][0],
-                                                 mummy_white["coordinates"][1],
-                                                 mummy_white["cellIndex"],
-                                                 mummy_white["direction"])
+        for i in range(len(mummy_white)):
+            mummy_white[i]["sprite_sheet"].draw(screen,
+                                                mummy_white[i]["coordinates"][0],
+                                                mummy_white[i]["coordinates"][1],
+                                                mummy_white[i]["cellIndex"],
+                                                mummy_white[i]["direction"])
+
+    # Vẽ Mummy Red
+    if mummy_red:
+        for i in range(len(mummy_red)):
+            mummy_red[i]["sprite_sheet"].draw(screen,
+                                              mummy_red[i]["coordinates"][0],
+                                              mummy_red[i]["coordinates"][1],
+                                              mummy_red[i]["cellIndex"],
+                                              mummy_red[i]["direction"])
+
+    # Vẽ Scorpion white
+    if scorpion_white:
+        for i in range(len(scorpion_white)):
+            scorpion_white[i]["sprite_sheet"].draw(screen,
+                                                   scorpion_white[i]["coordinates"][0],
+                                                   scorpion_white[i]["coordinates"][1],
+                                                   scorpion_white[i]["cellIndex"],
+                                                   scorpion_white[i]["direction"])
+
+    # Vẽ Scorpion red
+    if scorpion_red:
+        for i in range(len(scorpion_red)):
+            scorpion_red[i]["sprite_sheet"].draw(screen,
+                                                 scorpion_red[i]["coordinates"][0],
+                                                 scorpion_red[i]["coordinates"][1],
+                                                 scorpion_red[i]["cellIndex"],
+                                                 scorpion_red[i]["direction"])
 
     # Vẽ tường
-    if True:
+    draw_wall = True
+    if draw_wall:
         # Horizontal Wall (Tường ngang)
         # Hàng chẵn chứa tường ngang
         # Tường nằm giữa 2 ô trống ngang nên ở cột lẻ
@@ -217,6 +310,36 @@ def draw_screen(screen, input_maze, backdrop, floor, maze_size, cell_rect,
                     else:
                         wall.draw_left_wall(screen, wall_x, wall_y)
 
+def gate_animation(screen, game, backdrop, floor,
+                   stair, stair_position, trap, trap_position, key, key_position,
+                   gate_sheet, gate, wall,
+                   explorer,
+                   mummy_white, mummy_red,
+                   scorpion_white, scorpion_red):
+    if gate["isClosed"]:
+        for i in range(8):
+            gate["cellIndex"] = -(i+1)
+            draw_screen(screen, game.maze, backdrop, floor, game.maze_size, game.cell_rect,
+                        stair, stair_position, trap, trap_position, key, key_position,
+                        gate_sheet, gate, wall,
+                        explorer,
+                        mummy_white, mummy_red,
+                        scorpion_white, scorpion_red)
+            pygame.time.delay(100)
+            pygame.display.update()
+    else:
+        for i in range(8):
+            gate["cellIndex"] = i
+            draw_screen(screen, game.maze, backdrop, floor, game.maze_size, game.cell_rect,
+                        stair, stair_position, trap, trap_position, key, key_position,
+                        gate_sheet, gate, wall,
+                        explorer,
+                        mummy_white, mummy_red,
+                        scorpion_white, scorpion_red)
+            pygame.time.delay(100)
+            pygame.display.update()
+
+
 def determine_moving_direction(past_position, new_position):
     if past_position[0] == new_position[0] + 2:  # Move UP
         return "UP"
@@ -228,42 +351,112 @@ def determine_moving_direction(past_position, new_position):
         return "RIGHT"
 
 def enemy_move_animation(mw_past_position, mw_new_position,
-                         screen, game,
-                         backdrop, floor, stair, stair_position, wall,
-                         explorer, mummy_white):
-    mw_check_movement = False
+                         mr_past_position, mr_new_position,
+                         sw_past_position, sw_new_position,
+                         sr_past_position, sr_new_position,
+                         screen, game, backdrop, floor,
+                         stair, stair_position, trap, trap_position, key, key_position,
+                         gate_sheet, gate, wall,
+                         explorer,
+                         mummy_white, mummy_red,
+                         scorpion_white, scorpion_red):
+    def determine_coor_and_direction(past_position, new_position,
+                                    check_movement, enemy):
+        start_coordinate = []
+        for i in range(len(past_position)):
+            start_x = game.coordinate_screen_x + game.cell_rect * (past_position[i][1] // 2)
+            start_y = game.coordinate_screen_y + game.cell_rect * (past_position[i][0] // 2)
+            if game.maze[new_position[i][0] - 1][new_position[i][1]] == "%" or \
+               game.maze[new_position[i][0] - 1][new_position[i][1]] == "G":
+                start_y += 3
+            start_coordinate.append([start_x, start_y])
+            if past_position[i][0] != new_position[i][0] or \
+               past_position[i][1] != new_position[i][1]:
+                check_movement[i] = True
+            if check_movement[i]:
+                enemy[i]["direction"] = determine_moving_direction(past_position[i], new_position[i])
+        for i in range(len(enemy)):
+            enemy[i]["coordinates"] = start_coordinate[i]
+        return check_movement, enemy
+
+    mw_check_movement = [False] * len(mw_past_position)
+    mr_check_movement = [False] * len(mr_past_position)
+    sw_check_movement = [False] * len(sw_past_position)
+    sr_check_movement = [False] * len(sr_past_position)
+
     # Mummy white
-    mummy_white_start_x = game.coordinate_screen_x + game.cell_rect * (mw_past_position[1] // 2)
-    mummy_white_start_y = game.coordinate_screen_y + game.cell_rect * (mw_past_position[0] // 2)
-
-    if game.maze[mw_new_position[0] - 1][mw_new_position[1]] == "%":
-        mummy_white_start_y += 3
-
-    mummy_white_start_coordinate = [mummy_white_start_x, mummy_white_start_y]
-    if mw_past_position[0] != mw_new_position[0] or mw_past_position[1] != mw_new_position[1]:
-        mw_check_movement = True
-
-    if mw_check_movement:
-        mummy_white["direction"] = determine_moving_direction(mw_past_position, mw_new_position)
+    mw_check_movement, mummy_white      = determine_coor_and_direction(mw_past_position, mw_new_position,
+                                                                        mw_check_movement, mummy_white)
+    # Mummy red
+    mr_check_movement, mummy_red        = determine_coor_and_direction(mr_past_position, mr_new_position,
+                                                                        mr_check_movement, mummy_red)
+    # Scorpion white
+    sw_check_movement, scorpion_white   = determine_coor_and_direction(sw_past_position, sw_new_position,
+                                                                        sw_check_movement, scorpion_white)
+    # Scorpion Red
+    sr_check_movement, scorpion_red     = determine_coor_and_direction(sr_past_position, sr_new_position,
+                                                                        sr_check_movement, scorpion_red)
 
     step_stride = game.cell_rect // 5
-    mummy_white["coordinates"] = mummy_white_start_coordinate
 
     for i in range(6):
-        if i < 5:
-            if mummy_white["direction"] == "UP" and mw_check_movement:
-                mummy_white["coordinates"][1] -= step_stride
-            if mummy_white["direction"] == "DOWN" and mw_check_movement:
-                mummy_white["coordinates"][1] += step_stride
-            if mummy_white["direction"] == "LEFT" and mw_check_movement:
-                mummy_white["coordinates"][0] -= step_stride
-            if mummy_white["direction"] == "RIGHT" and mw_check_movement:
-                mummy_white["coordinates"][0] += step_stride
-        if mw_check_movement:
-            mummy_white["cellIndex"] = i % 5
+        for j in range(len(mummy_white)):
+            if i < 5:
+                if mummy_white[j]["direction"] == "UP"      and mw_check_movement[j]:
+                    mummy_white[j]["coordinates"][1] -= step_stride
+                if mummy_white[j]["direction"] == "DOWN"    and mw_check_movement[j]:
+                    mummy_white[j]["coordinates"][1] += step_stride
+                if mummy_white[j]["direction"] == "LEFT"    and mw_check_movement[j]:
+                    mummy_white[j]["coordinates"][0] -= step_stride
+                if mummy_white[j]["direction"] == "RIGHT"   and mw_check_movement[j]:
+                    mummy_white[j]["coordinates"][0] += step_stride
+            if mw_check_movement[j]:
+                mummy_white[j]["cellIndex"] = i % 5
+
+        for j in range(len(mummy_red)):
+            if i < 5:
+                if mummy_red[j]["direction"] == "UP"        and mr_check_movement[j]:
+                    mummy_red[j]["coordinates"][1] -= step_stride
+                if mummy_red[j]["direction"] == "DOWN"      and mr_check_movement[j]:
+                    mummy_red[j]["coordinates"][1] += step_stride
+                if mummy_red[j]["direction"] == "LEFT"      and mr_check_movement[j]:
+                    mummy_red[j]["coordinates"][0] -= step_stride
+                if mummy_red[j]["direction"] == "RIGHT"     and mr_check_movement[j]:
+                    mummy_red[j]["coordinates"][0] += step_stride
+            if mr_check_movement[j]:
+                mummy_red[j]["cellIndex"] = i % 5
+
+        for j in range(len(scorpion_white)):
+            if i < 5:
+                if scorpion_white[j]["direction"] == "UP"   and sw_check_movement[j]:
+                    scorpion_white[j]["coordinates"][1] -= step_stride
+                if scorpion_white[j]["direction"] == "DOWN" and sw_check_movement[j]:
+                    scorpion_white[j]["coordinates"][1] += step_stride
+                if scorpion_white[j]["direction"] == "LEFT" and sw_check_movement[j]:
+                    scorpion_white[j]["coordinates"][0] -= step_stride
+                if scorpion_white[j]["direction"] == "RIGHT"and sw_check_movement[j]:
+                    scorpion_white[j]["coordinates"][0] += step_stride
+            if sw_check_movement[j]:
+                scorpion_white[j]["cellIndex"] = i % 5
+
+        for j in range(len(scorpion_red)):
+            if i < 5:
+                if scorpion_red[j]["direction"] == "UP"     and sr_check_movement[j]:
+                    scorpion_red[j]["coordinates"][1] -= step_stride
+                if scorpion_red[j]["direction"] == "DOWN"   and sr_check_movement[j]:
+                    scorpion_red[j]["coordinates"][1] += step_stride
+                if scorpion_red[j]["direction"] == "LEFT"   and sr_check_movement[j]:
+                    scorpion_red[j]["coordinates"][0] -= step_stride
+                if scorpion_red[j]["direction"] == "RIGHT"  and sr_check_movement[j]:
+                    scorpion_red[j]["coordinates"][0] += step_stride
+            if sr_check_movement[j]:
+                scorpion_red[j]["cellIndex"] = i % 5
 
         draw_screen(screen, game.maze, backdrop, floor, game.maze_size, game.cell_rect,
-                    stair, stair_position, wall,
-                    explorer, mummy_white)
+                    stair, stair_position, trap, trap_position, key, key_position,
+                    gate_sheet, gate, wall,
+                    explorer,
+                    mummy_white, mummy_red,
+                    scorpion_white, scorpion_red)
         pygame.time.delay(100)
         pygame.display.update()
